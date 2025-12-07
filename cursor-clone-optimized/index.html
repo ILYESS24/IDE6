@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cursor Clone - AI-Powered Code Editor in your browser">
+    <meta name="theme-color" content="#1e1e1e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Cursor Clone - Ultimate Max Edition</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="data:application/json,{%22name%22:%22Cursor%20Clone%22,%22short_name%22:%22Cursor%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%231e1e1e%22,%22theme_color%22:%22%231e1e1e%22,%22icons%22:[{%22src%22:%22https://cdn.jsdelivr.net/npm/@vscode/codicons/src/icons/terminal.svg%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons/dist/codicon.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown-dark.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Toast Notifications -->
+    <div id="toastContainer"></div>
+
+    <!-- Activity Bar -->
+    <div class="activity">
+        <div class="act-item active" data-view="explorer">
+            <i class="codicon codicon-files"></i>
+        </div>
+        <div class="act-item" data-view="search">
+            <i class="codicon codicon-search"></i>
+        </div>
+        <div class="act-item" data-view="git">
+            <i class="codicon codicon-source-control" id="gitIcon"></i>
+            <div class="badge" id="gitBadge" style="display:none">0</div>
+        </div>
+        <div class="act-item" data-view="debug">
+            <i class="codicon codicon-debug-alt"></i>
+        </div>
+        <div class="act-item" data-view="extensions">
+            <i class="codicon codicon-extensions"></i>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="main">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <!-- Sidebar Header -->
+            <div class="side-header">
+                <span>EXPLORER</span>
+                <div class="side-actions">
+                    <i class="codicon codicon-new-file" title="New File" onclick="showNewFileModal('file')"></i>
+                    <i class="codicon codicon-new-folder" title="New Folder" onclick="showNewFileModal('folder')"></i>
+                    <i class="codicon codicon-refresh" title="Refresh" onclick="queueRender('tree')"></i>
+                </div>
+            </div>
+
+            <!-- File Tree -->
+            <div class="file-tree" id="fileTree"></div>
+        </div>
+
+        <!-- Sidebar Views -->
+        <div class="sidebar-view" id="view-explorer">
+            <div class="file-tree" id="fileTree"></div>
+        </div>
+
+        <div class="sidebar-view" id="view-search">
+            <div class="search-box">
+                <input type="text" id="globalSearchInput" class="search-input" placeholder="Search in files...">
+            </div>
+            <div class="search-results" id="searchResults"></div>
+        </div>
+
+        <div class="sidebar-view" id="view-git">
+            <div class="git-section">
+                <div class="git-section-title">
+                    <i class="codicon codicon-source-control"></i>
+                    SOURCE CONTROL
+                </div>
+                <div id="gitChanges"></div>
+            </div>
+        </div>
+
+        <div class="sidebar-view" id="view-debug">
+            <div class="side-header">DEBUG</div>
+            <div class="problems-list" id="problemsList"></div>
+        </div>
+
+        <div class="sidebar-view" id="view-extensions">
+            <div class="side-header">EXTENSIONS</div>
+            <div style="padding:20px;color:var(--text2)">Extensions panel coming soon...</div>
+        </div>
+
+        <!-- Resize Handle -->
+        <div class="resize-h" id="rSidebar"></div>
+
+        <!-- Editor Area -->
+        <div class="editor-wrap">
+            <!-- Breadcrumbs -->
+            <div class="breadcrumbs" id="breadcrumbs"></div>
+
+            <!-- Tabs -->
+            <div class="tabs" id="tabsBar"></div>
+
+            <!-- Editor Container -->
+            <div class="editors-container">
+                <div class="editor-pane">
+                    <div class="editor-content">
+                        <div id="monaco" style="height:100%"></div>
+                        <div id="emptyEditor" class="empty-editor">
+                            <div>
+                                <h2>🚀 Cursor Clone</h2>
+                                <p>Get started by opening a file from the explorer.</p>
+                                <div class="shortcuts">
+                                    <div>
+                                        <div class="key">Ctrl+K</div>
+                                        <div class="label">Command Palette</div>
+                                    </div>
+                                    <div>
+                                        <div class="key">Ctrl+P</div>
+                                        <div class="label">Quick Open</div>
+                                    </div>
+                                    <div>
+                                        <div class="key">Ctrl+`</div>
+                                        <div class="label">Toggle Terminal</div>
+                                    </div>
+                                    <div>
+                                        <div class="key">Ctrl+L</div>
+                                        <div class="label">Focus AI Chat</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview Pane -->
+                    <div class="preview-pane" id="previewPane">
+                        <div class="preview-header">
+                            <span>Preview</span>
+                            <i class="codicon codicon-close" onclick="closePreview()"></i>
+                        </div>
+                        <iframe id="previewFrame"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Sidebar -->
+        <div class="ai-side" id="aiSide">
+            <div class="ai-header">
+                <span>AI Assistant</span>
+                <i class="codicon codicon-close" onclick="toggleAISidebar()"></i>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="chat-area" id="chatArea"></div>
+
+            <!-- AI Input -->
+            <div class="ai-input-wrap">
+                <div class="model-row">
+                    <select class="model-select" id="modelSelect">
+                        <option value="anthropic/claude-3.5-sonnet">⭐ Claude 3.5 Sonnet</option>
+                        <option value="anthropic/claude-3-opus">Claude 3 Opus</option>
+                        <option value="openai/gpt-4o">GPT-4o</option>
+                        <option value="openai/gpt-4-turbo">GPT-4 Turbo</option>
+                        <option value="google/gemini-pro-1.5">Gemini Pro 1.5</option>
+                        <option value="mistralai/mistral-large">Mistral Large</option>
+                        <option value="meta-llama/llama-3.1-405b-instruct">Llama 3.1 405B</option>
+                        <option value="deepseek/deepseek-coder">DeepSeek Coder</option>
+                    </select>
+                </div>
+                <div class="ai-input-container">
+                    <textarea
+                        class="ai-input"
+                        id="aiInput"
+                        placeholder="Ask me anything about your code..."
+                        rows="1"
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn" disabled>Send</button>
+                </div>
+                <div class="mentions-dropdown" id="mentionsDropdown"></div>
+            </div>
+        </div>
+
+        <!-- Resize Handle -->
+        <div class="resize-h" id="rAI"></div>
+    </div>
+
+    <!-- Bottom Panel -->
+    <div class="bottom-panel" id="bottomPanel">
+        <!-- Panel Header -->
+        <div class="panel-header">
+            <div class="panel-tab active" data-panel="terminal">
+                <i class="codicon codicon-terminal"></i>
+                Terminal
+                <span class="count" id="termCount">1</span>
+            </div>
+            <div class="panel-tab" data-panel="problems">
+                <i class="codicon codicon-error"></i>
+                Problems
+                <span class="count" id="problemsCount">0</span>
+            </div>
+            <div class="panel-tab" data-panel="output">
+                <i class="codicon codicon-output"></i>
+                Output
+            </div>
+            <div class="panel-tab" data-panel="debug">
+                <i class="codicon codicon-debug-console"></i>
+                Debug Console
+            </div>
+            <i class="codicon codicon-close panel-close" onclick="togglePanel()"></i>
+        </div>
+
+        <!-- Panel Content -->
+        <div class="panel-body active" data-panel="terminal">
+            <div class="term-wrap">
+                <div id="terminal"></div>
+            </div>
+        </div>
+
+        <div class="panel-body" data-panel="problems">
+            <div class="problems-list" id="problemsListBottom"></div>
+        </div>
+
+        <div class="panel-body" data-panel="output">
+            <div class="console-output" id="outputConsole"></div>
+        </div>
+
+        <div class="panel-body" data-panel="debug">
+            <div class="console-output" id="debugConsole"></div>
+        </div>
+    </div>
+
+    <!-- Resize Handle -->
+    <div class="resize-v" id="rPanel"></div>
+
+    <!-- Status Bar -->
+    <div class="status">
+        <div class="status-left">
+            <div class="status-item" onclick="toggleAISidebar()">
+                <i class="codicon codicon-robot"></i>
+                AI Ready
+            </div>
+            <div class="status-item" onclick="togglePanel()">
+                <i class="codicon codicon-terminal"></i>
+                Terminal
+            </div>
+        </div>
+        <div class="status-right">
+            <div class="status-item" id="cursorPos">Ln 1, Col 1</div>
+            <div class="status-item" onclick="setTheme(localStorage.getItem('theme') === 'dark' ? 'light' : 'dark')" id="themeToggle">
+                <i class="codicon codicon-color-mode"></i>
+                Theme
+            </div>
+            <div class="status-item" onclick="openSettings()">
+                <i class="codicon codicon-settings-gear"></i>
+                Settings
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="commandModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span id="commandTitle">Command Palette</span>
+                <i class="codicon codicon-close" onclick="closeModal()"></i>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="commandInput" class="form-input" placeholder="Type a command...">
+                <div id="commandList" class="palette-list" style="margin-top:10px"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="newFileModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span id="newFileTitle">New File</span>
+                <i class="codicon codicon-close" onclick="closeModal()"></i>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Name:</label>
+                    <input type="text" id="newFileName" class="form-input">
+                </div>
+                <div style="display:flex;gap:10px;margin-top:20px">
+                    <button class="btn" onclick="confirmNewFile()">Create</button>
+                    <button class="btn secondary" onclick="closeModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-box" style="width:700px">
+            <div class="modal-header">
+                <span>Settings</span>
+                <i class="codicon codicon-close" onclick="closeModal()"></i>
+            </div>
+            <div class="modal-body">
+                <div id="settingsContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="inlineEditModal">
+        <div class="modal-box inline-edit-box">
+            <div class="modal-header">
+                <span>Inline Edit</span>
+                <i class="codicon codicon-close" onclick="closeModal()"></i>
+            </div>
+            <div class="modal-body">
+                <div class="inline-edit-header">
+                    <span>Editing: <span id="inlineEditFile"></span></span>
+                </div>
+                <textarea id="inlineEditInput" class="inline-edit-input" spellcheck="false"></textarea>
+                <div class="inline-edit-preview" id="inlineEditPreview"></div>
+                <div class="inline-edit-actions">
+                    <button class="btn secondary" onclick="closeModal()">Cancel</button>
+                    <button class="btn" onclick="applyInlineEdit()">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="gotoLineModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span>Go to Line</span>
+                <i class="codicon codicon-close" onclick="closeModal()"></i>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Line number:</label>
+                    <input type="number" id="gotoLineInput" class="form-input" min="1">
+                </div>
+                <div style="display:flex;gap:10px;margin-top:20px">
+                    <button class="btn" onclick="gotoLine()">Go</button>
+                    <button class="btn secondary" onclick="closeModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div class="context-menu" id="contextMenu"></div>
+
+    <!-- PWA Install Banner -->
+    <div class="pwa-banner hidden" id="pwaBanner">
+        <i class="codicon codicon-desktop-download"></i>
+        <div>
+            <div style="font-weight:600">Install Cursor Clone</div>
+            <div style="font-size:12px;color:#ccc">Install as app for the best experience</div>
+        </div>
+        <button onclick="installPWA()" style="background:#0078d4;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer">Install</button>
+        <i class="codicon codicon-close" onclick="document.getElementById('pwaBanner').classList.add('hidden')"></i>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@12/lib/marked.umd.min.js"></script>
+    <script src="js/app-optimized.js"></script>
+</body>
+</html>

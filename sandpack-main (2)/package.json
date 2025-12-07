@@ -1,0 +1,50 @@
+{
+  "name": "cursor-clone",
+  "version": "2.0.0",
+  "description": "Cursor Clone - AI-Powered Code Editor in your browser",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000 || npx http-server -p 8000",
+    "dev": "npm run start",
+    "deploy": "node deploy.js",
+    "deploy:netlify": "node deploy.js netlify",
+    "deploy:vercel": "node deploy.js vercel",
+    "deploy:surge": "node deploy.js surge",
+    "deploy:github": "node deploy.js github",
+    "build": "echo 'No build step required - this is a static site'",
+    "preview": "npm run start"
+  },
+  "keywords": [
+    "code-editor",
+    "monaco-editor",
+    "vscode",
+    "cursor",
+    "web-ide",
+    "ai",
+    "terminal",
+    "javascript",
+    "html",
+    "css"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/cursor-clone.git"
+  },
+  "homepage": "https://yourusername.github.io/cursor-clone",
+  "bugs": {
+    "url": "https://github.com/yourusername/cursor-clone/issues"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "dependencies": {},
+  "browserslist": [
+    "last 2 versions",
+    "not ie <= 11"
+  ]
+}

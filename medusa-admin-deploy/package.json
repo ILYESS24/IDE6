@@ -1,0 +1,11 @@
+﻿{
+    "private":  true,
+    "name":  "medusa-admin-deploy",
+    "version":  "1.0.0",
+    "dependencies":  {
+                         "@medusajs/medusa":  "^2.0.0"
+                     },
+    "scripts":  {
+                    "build":  "medusa build --admin-only"
+                }
+}
