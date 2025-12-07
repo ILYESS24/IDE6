@@ -1,0 +1,49 @@
+{
+  "name": "cursor-clone-ide6",
+  "version": "1.0.0",
+  "description": "Cursor Clone - AI-Powered Code Editor (IDE6)",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000 || npx http-server -p 8000",
+    "dev": "npm run start",
+    "deploy": "wrangler pages deploy . --project-name=cursor-clone-v3",
+    "build": "echo 'Static site - no build required'",
+    "preview": "npm run start"
+  },
+  "keywords": [
+    "code-editor",
+    "monaco-editor",
+    "vscode",
+    "cursor",
+    "web-ide",
+    "ai",
+    "terminal",
+    "javascript",
+    "html",
+    "css",
+    "cloudflare",
+    "pages"
+  ],
+  "author": "ILYESS24",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ILYESS24/IDE6.git"
+  },
+  "homepage": "https://467823a5.cursor-clone-v3.pages.dev",
+  "bugs": {
+    "url": "https://github.com/ILYESS24/IDE6/issues"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "wrangler": "^4.53.0"
+  },
+  "dependencies": {},
+  "browserslist": [
+    "last 2 versions",
+    "not ie <= 11"
+  ]
+}
